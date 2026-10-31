@@ -537,13 +537,13 @@
         back: opt.back || '#/train', backLabel: opt.backLabel || 'К тренировкам',
         onFinish: function (res) {
           var pct = Math.round(res.correct * 100 / res.total);
-          var passAt = opt.passAt || 85;
-          if (opt.onDone) opt.onDone(pct, res);
+          var passed = opt.isPassed ? opt.isPassed(res, pct) : pct >= 85;
+          if (opt.onDone) opt.onDone(pct, res, passed);
           showResult({
-            pct: pct, passed: pct >= passAt, res: res,
-            title: opt.verdict ? opt.verdict(pct >= passAt, pct)
+            pct: pct, passed: passed, res: res,
+            title: opt.verdict ? opt.verdict(passed, pct, res)
               : pct >= 90 ? 'Прекрасно' : pct >= 70 ? 'Неплохо' : 'Есть над чем поработать',
-            text: opt.verdictText ? opt.verdictText(pct >= passAt, pct)
+            text: opt.verdictText ? opt.verdictText(passed, pct, res)
               : pct >= 90 ? 'Тема уверенно закрыта.'
               : pct >= 70 ? 'Основное понятно, но пара мест требует внимания. Разбор ниже.'
               : 'Стоит вернуться к теории по этой теме, а потом прорешать ещё раз.',
@@ -577,7 +577,7 @@
       questions: UI.shuffle(moduleQuestions(id), Date.now() % 99991),
       back: '#/module/' + id, backLabel: 'К модулю',
       /* Все вопросы темы решены не хуже, чем нужно для теста модуля, — тест засчитан */
-      onDone: function (pct) { Store.saveModule(id, pct, pct >= 85); },
+      onDone: function (pct, res, passed) { Store.saveModule(id, pct, passed); },
       verdict: function (ok) { return ok ? 'Тест модуля засчитан' : 'Ещё нужно повторить'; },
       verdictText: function (ok) {
         return ok ? 'Вся тема решена на зачёт — тест модуля засчитан.'
@@ -627,6 +627,24 @@
     });
   };
 
+  /* Билет решён так же, как сдаётся экзамен: не больше двух ошибок и не две в одном блоке из пяти вопросов */
+  function ticketErrors(res) {
+    var byBlock = {}, total = 0, sameBlock = false;
+    res.questions.forEach(function (q, i) {
+      if (res.picks[i] === q.correct) return;
+      var b = Math.floor(i / 5);
+      total++;
+      byBlock[b] = (byBlock[b] || 0) + 1;
+      if (byBlock[b] >= 2) sameBlock = true;
+    });
+    return { total: total, sameBlock: sameBlock };
+  }
+
+  function ticketPassed(res) {
+    var e = ticketErrors(res);
+    return e.total <= 2 && !e.sameBlock;
+  }
+
   V.ticket = function (n) {
     n = +n;
     var t = window.DB.tickets.filter(function (x) { return x.n === n; })[0];
@@ -635,12 +653,15 @@
     return runSet({
       title: 'Билет ' + n, sub: '20 вопросов', questions: qs,
       back: '#/tickets', backLabel: 'К билетам',
-      passAt: 90,
-      onDone: function (pct) { Store.saveTicket(n, pct, pct >= 90); },
+      isPassed: ticketPassed,
+      onDone: function (pct, res, passed) { Store.saveTicket(n, pct, passed); },
       verdict: function (ok) { return ok ? 'Билет решён' : 'Билет не решён'; },
-      verdictText: function (ok, pct) {
-        return ok ? 'Не больше двух ошибок — на экзамене с таким результатом есть шанс сдать.'
-          : 'Для зачёта билета нужно 90% — не больше двух ошибок из двадцати. Разбор ниже.';
+      verdictText: function (ok, pct, res) {
+        if (ok) return pct === 100 ? 'Ни одной ошибки — именно так экзамен и сдают.'
+          : 'Одна-две ошибки в разных блоках: на экзамене за них дадут дополнительные вопросы. Разбор ниже.';
+        return ticketErrors(res).sameBlock
+          ? 'Две ошибки в одном тематическом блоке — на экзамене это сразу несдача. Разбор ниже.'
+          : 'Для зачёта — не больше двух ошибок из двадцати, и не в одном блоке. Разбор ниже.';
       },
       actions: [
         n < 40 ? { href: '#/ticket/' + (n + 1), label: 'Билет ' + (n + 1), primary: true } : { href: '#/tickets', label: 'К билетам', primary: true }

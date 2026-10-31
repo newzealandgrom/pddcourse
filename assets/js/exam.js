@@ -62,6 +62,7 @@
             '<tr><td>Кончилось время</td><td style="color:var(--stop)">Экзамен не сдан</td></tr>' +
           '</tbody></table>' +
         '</div>' +
+        '<p style="color:var(--fg-3);font-size:14px;margin-top:16px">С 12 мая 2026 года за телефон, шпаргалку или другую технику на экзамене его прекращают, результат могут аннулировать, а снова сдавать можно не раньше чем через 12 месяцев.</p>' +
         '<div class="hero-cta" style="margin-top:24px"><button class="btn btn-primary btn-lg" id="ex-go">Начать экзамен</button></div>' +
       '</div>' +
 
