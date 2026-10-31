@@ -21,9 +21,15 @@
     return d.firstElementChild;
   }
 
+  /* mulberry32: целочисленная арифметика через Math.imul, без потери точности на больших сидах */
   function shuffle(arr, seed) {
-    var a = arr.slice(), s = seed == null ? Math.random() * 1e9 : seed;
-    function rnd() { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; }
+    var a = arr.slice(), s = (seed == null ? Math.random() * 4294967296 : seed) >>> 0;
+    function rnd() {
+      s = (s + 0x6D2B79F5) >>> 0;
+      var t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
     for (var i = a.length - 1; i > 0; i--) {
       var j = Math.floor(rnd() * (i + 1));
       var t = a[i]; a[i] = a[j]; a[j] = t;

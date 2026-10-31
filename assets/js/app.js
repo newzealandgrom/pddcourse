@@ -69,13 +69,14 @@
                   '#/topic': '#/course', '#/cards': '#/course',
                   '#/topicq': '#/train', '#/tickets': '#/train', '#/ticket': '#/train',
                   '#/marathon': '#/train', '#/mistakes': '#/train' };
-    if (root === '#/before' || root === '#/exam') key = hash.indexOf('#/before') === 0 ? '#/before' : '#/exam';
     var key = alias[root] || root;
     document.querySelectorAll('[data-nav]').forEach(function (a) {
       a.classList.toggle('on', a.dataset.nav === key);
     });
+    /* В нижнем меню «Экзамен» ведёт на «Перед экзаменом» и подсвечивается для обоих разделов */
+    var mkey = key === '#/exam' ? '#/before' : key;
     document.querySelectorAll('[data-mnav]').forEach(function (a) {
-      a.classList.toggle('on', a.dataset.mnav === key);
+      a.classList.toggle('on', a.dataset.mnav === mkey);
     });
   }
 
@@ -138,6 +139,12 @@
     Exam._init(Views._helpers);
     Ref._init(Views._helpers);
     window.addEventListener('hashchange', route);
+
+    /* Прогресс изменился (ответ, тест, другая вкладка) — обновляем процент и счётчик ошибок в меню */
+    window.addEventListener('store:change', function () {
+      drawNav();
+      markActive(location.hash || '#/');
+    });
 
     /* Ссылка на текущий адрес («Ещё попытка», «Пройти ещё раз») не меняет hash,
        а значит не вызывает hashchange — перерисовываем вручную. */

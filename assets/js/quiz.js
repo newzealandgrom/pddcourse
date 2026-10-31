@@ -45,10 +45,10 @@
       onAnswer: opt.onAnswer,
       shuffleOpts: opt.shuffleOpts !== false
     };
+    /* Порядок вариантов — случайный при каждом запуске, чтобы не запоминать ответ по позиции */
     if (cur.shuffleOpts) {
-      cur.order = cur.questions.map(function (q, i) {
-        var idxs = q.answers.map(function (_, j) { return j; });
-        return UI.shuffle(idxs, (q.srcId ? q.srcId.charCodeAt(0) * 7919 : 13) + i * 104729);
+      cur.order = cur.questions.map(function (q) {
+        return UI.shuffle(q.answers.map(function (_, j) { return j; }));
       });
     } else {
       cur.order = cur.questions.map(function (q) { return q.answers.map(function (_, j) { return j; }); });
@@ -72,10 +72,10 @@
     if (!cur) return;
     cur.extraFrom = cur.questions.length;
     cur.questions = cur.questions.concat(list);
-    list.forEach(function (q, i) {
+    list.forEach(function (q) {
       cur.picks.push(null);
       var idxs = q.answers.map(function (_, j) { return j; });
-      cur.order.push(cur.shuffleOpts ? UI.shuffle(idxs, (q.srcId ? q.srcId.charCodeAt(1) * 6151 : 31) + i * 65537) : idxs);
+      cur.order.push(cur.shuffleOpts ? UI.shuffle(idxs) : idxs);
     });
     cur.left += extraSeconds || 0;
     cur.idx = cur.extraFrom;

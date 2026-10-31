@@ -117,8 +117,11 @@
   }
 
   function onFinish(res, state) {
-    /* Основная часть пройдена без фатальных ошибок — выдаём дополнительные вопросы */
-    if (state.stage === 'main' && res.reason === 'done' && state.errors.length > 0 && state.errors.length <= 2) {
+    /* Основная часть пройдена без фатальных ошибок — выдаём дополнительные вопросы.
+       Если завершили досрочно и что-то осталось без ответа, это уже несдача: сразу итог. */
+    var unanswered = res.picks.filter(function (p) { return p === null; }).length;
+    if (state.stage === 'main' && res.reason === 'done' && !unanswered &&
+        state.errors.length > 0 && state.errors.length <= 2) {
       var blocks = state.errors.map(function (e) { return e.block; });
       var uniq = blocks.filter(function (b, i) { return blocks.indexOf(b) === i; });
       var extra = [];

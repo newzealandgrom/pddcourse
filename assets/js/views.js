@@ -345,8 +345,8 @@
       kp + checks +
       '<div class="lesson-foot">' +
         '<button class="btn btn-primary" id="l-done">' + (done ? 'Пройдено ✓' : 'Урок пройден') + '</button>' +
-        (next ? '<a class="btn" href="#/lesson/' + next.id + '">Следующий урок</a>'
-              : '<a class="btn" href="#/test/' + f.module.id + '">Перейти к тесту модуля</a>') +
+        (next ? '<a class="btn" data-forward href="#/lesson/' + next.id + '">Следующий урок</a>'
+              : '<a class="btn" data-forward href="#/test/' + f.module.id + '">Перейти к тесту модуля</a>') +
         (prev ? '<a class="btn btn-ghost btn-sm" href="#/lesson/' + prev.id + '">← Предыдущий</a>' : '') +
       '</div>' +
     '</div>';
@@ -362,6 +362,12 @@
       if (next) location.hash = '#/lesson/' + next.id;
       else location.hash = '#/test/' + f.module.id;
     };
+
+    /* Переход вперёд тоже считается прохождением урока: раньше отмечала только
+       кнопка «Урок пройден», и уроки, пролистанные через «Следующий урок», оставались непройденными */
+    host.querySelectorAll('[data-forward]').forEach(function (a) {
+      a.addEventListener('click', function () { Store.markLesson(lid); });
+    });
 
     host.querySelectorAll('[data-c]').forEach(function (b) {
       b.onclick = function () {
@@ -531,11 +537,14 @@
         back: opt.back || '#/train', backLabel: opt.backLabel || 'К тренировкам',
         onFinish: function (res) {
           var pct = Math.round(res.correct * 100 / res.total);
+          var passAt = opt.passAt || 85;
           if (opt.onDone) opt.onDone(pct, res);
           showResult({
-            pct: pct, passed: pct >= 85, res: res,
-            title: pct >= 90 ? 'Прекрасно' : pct >= 70 ? 'Неплохо' : 'Есть над чем поработать',
-            text: pct >= 90 ? 'Тема уверенно закрыта.'
+            pct: pct, passed: pct >= passAt, res: res,
+            title: opt.verdict ? opt.verdict(pct >= passAt, pct)
+              : pct >= 90 ? 'Прекрасно' : pct >= 70 ? 'Неплохо' : 'Есть над чем поработать',
+            text: opt.verdictText ? opt.verdictText(pct >= passAt, pct)
+              : pct >= 90 ? 'Тема уверенно закрыта.'
               : pct >= 70 ? 'Основное понятно, но пара мест требует внимания. Разбор ниже.'
               : 'Стоит вернуться к теории по этой теме, а потом прорешать ещё раз.',
             actions: (opt.actions || []).concat([{ href: opt.back || '#/train', label: 'К тренировкам' }])
@@ -567,6 +576,12 @@
       title: p.title, sub: 'все вопросы темы',
       questions: UI.shuffle(moduleQuestions(id), Date.now() % 99991),
       back: '#/module/' + id, backLabel: 'К модулю',
+      /* Все вопросы темы решены не хуже, чем нужно для теста модуля, — тест засчитан */
+      onDone: function (pct) { Store.saveModule(id, pct, pct >= 85); },
+      verdictText: function (ok) {
+        return ok ? 'Вся тема решена на зачёт — тест модуля засчитан.'
+          : 'Для зачёта модуля нужно 85%. Разбор ошибок ниже.';
+      },
       actions: [{ href: '#/topic/' + id, label: 'Ещё раз', primary: true }]
     });
   };
@@ -619,7 +634,13 @@
     return runSet({
       title: 'Билет ' + n, sub: '20 вопросов', questions: qs,
       back: '#/tickets', backLabel: 'К билетам',
+      passAt: 90,
       onDone: function (pct) { Store.saveTicket(n, pct, pct >= 90); },
+      verdict: function (ok) { return ok ? 'Билет решён' : 'Билет не решён'; },
+      verdictText: function (ok, pct) {
+        return ok ? 'Не больше двух ошибок — на экзамене с таким результатом есть шанс сдать.'
+          : 'Для зачёта билета нужно 90% — не больше двух ошибок из двадцати. Разбор ниже.';
+      },
       actions: [
         n < 40 ? { href: '#/ticket/' + (n + 1), label: 'Билет ' + (n + 1), primary: true } : { href: '#/tickets', label: 'К билетам', primary: true }
       ]
