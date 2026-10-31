@@ -65,8 +65,7 @@ pddcourse/
 │   ├── course/m01–m22.json  # уроки курса
 │   ├── db.js, course.js  # СОБИРАЮТСЯ из JSON скриптом tools/build.py — руками не править
 ├── img/                  # знаки, разметка, картинки к вопросам
-├── tools/build.py        # сборка db.js / course.js + версия файлов в index.html
-└── .claude/agents/       # роли pdd-* для Claude Code (аудит правил, вопросов, прогресса)
+└── tools/build.py        # сборка db.js / course.js + версия файлов в index.html
 ```
 
 ## Технологии
