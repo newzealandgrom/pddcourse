@@ -578,6 +578,7 @@
       back: '#/module/' + id, backLabel: 'К модулю',
       /* Все вопросы темы решены не хуже, чем нужно для теста модуля, — тест засчитан */
       onDone: function (pct) { Store.saveModule(id, pct, pct >= 85); },
+      verdict: function (ok) { return ok ? 'Тест модуля засчитан' : 'Ещё нужно повторить'; },
       verdictText: function (ok) {
         return ok ? 'Вся тема решена на зачёт — тест модуля засчитан.'
           : 'Для зачёта модуля нужно 85%. Разбор ошибок ниже.';
